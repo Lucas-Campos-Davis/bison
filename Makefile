@@ -7,4 +7,4 @@ scanner: scanner.cpp
 	g++ scanner.cpp -o scanner
 
 clean:
-rm -f scanner scanner.cpp
+	rm -f scanner scanner.cpp
