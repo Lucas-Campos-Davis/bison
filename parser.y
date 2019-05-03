@@ -14,6 +14,38 @@ extern int yylex();
   int category;
 }
 
+%token <str> IDENTIFIER
+%token <val> NUMBER
+%token <category> EQUALS PLUS MINUS TIMES DIVIDEDBY
+%token <category> LPAREN RPAREN SEMICOLON
+
+%type <val> expression
+
+%left PLUS MINUS
+%left TIMES DIVIDEDBY
+/* %right
+%nonassoc
+%precedence  */
+
 %%
+
+program
+  : program statement
+  | statement
+  ;
+
+statement
+  : IDENTIFIER EQUALS expression SEMICOLON { }
+  ;
+
+expression
+  : LPAREN expression RPAREN
+  | expression PLUS expression
+  | expression MINUS expression
+  | expression TIMES expression
+  | expression DIVIDEDBY expression
+  | NUMBER
+  | IDENTIFIER
+  ;
 
 %%
