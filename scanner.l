@@ -2,6 +2,9 @@
 #include <iostream>
 #include <vector>
 #include <set>
+#include <cstdlib>
+
+#include "parser.hpp"
 
 struct _word {
   std::string lexeme;
@@ -34,26 +37,31 @@ void _save_word(const std::string& lexeme, const std::string& category) {
 [ \t\n]*      /* Ignore whitespace. */
 
 [a-z][0-9]?   {
-                _save_word(yytext, "IDENTIFIER");
-                _ids.insert(yytext);
+                /* _save_word(yytext, "IDENTIFIER");
+                _ids.insert(yytext); */
+                yylval.str = new std::string(yytext, yyleng);
+                return IDENTIFIER;
               }
 
-[0-9]+("."[0-9]+)? { _save_word(yytext, "NUMBER"); }
+[0-9]+("."[0-9]+)? {
+                      yylval.val = atof(yytext);
+                      return NUMBER;
+                   }
 
-"="           { _save_word(yytext, "EQUALS"); }
-"+"           { _save_word(yytext, "PLUS"); }
-"-"           { _save_word(yytext, "MINUS"); }
-"*"           { _save_word(yytext, "TIMES"); }
-"/"           { _save_word(yytext, "DIVIDEDBY"); }
+"="           { yylval.category = EQUALS; return yylval.category; }
+"+"           { yylval.category = PLUS; return yylval.category; }
+"-"           { yylval.category = MINUS; return yylval.category; }
+"*"           { yylval.category = TIMES; return yylval.category; }
+"/"           { yylval.category = DIVIDEDBY; return yylval.category; }
 
-";"           { _save_word(yytext, "SEMICOLON"); }
-"("           { _save_word(yytext, "LPAREN"); }
-")"           { _save_word(yytext, "RPAREN"); }
+";"           { yylval.category = SEMICOLON; return yylval.category; }
+"("           { yylval.category = LPAREN; return yylval.category; }
+")"           { yylval.category = RPAREN; return yylval.category; }
 
 .             {
                 std::cerr << "Invalid symbol on line " << yylineno
                   << ": " << yytext << std::endl;
-                _error = true;
+                yylval.category = yytext[0]; return yylval.category;
               }
 
 <<EOF>>       {
@@ -66,7 +74,7 @@ void _save_word(const std::string& lexeme, const std::string& category) {
 
 %%
 
-int main() {
+/* int main() {
   if (!yylex()) {
     std::vector<struct _word>::iterator wit;
     for (wit = _words.begin(); wit != _words.end(); ++wit) {
@@ -79,4 +87,4 @@ int main() {
       std::cout << *iit << std::endl;
     }
   }
-}
+} */

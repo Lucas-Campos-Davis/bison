@@ -27,6 +27,8 @@ extern int yylex();
 %nonassoc
 %precedence  */
 
+%start program
+
 %%
 
 program
@@ -35,17 +37,17 @@ program
   ;
 
 statement
-  : IDENTIFIER EQUALS expression SEMICOLON { }
+  : IDENTIFIER EQUALS expression SEMICOLON
   ;
 
 expression
-  : LPAREN expression RPAREN
-  | expression PLUS expression
-  | expression MINUS expression
-  | expression TIMES expression
-  | expression DIVIDEDBY expression
-  | NUMBER
-  | IDENTIFIER
+  : LPAREN expression RPAREN { $$ = $2; }
+  | expression PLUS expression { $$ = $1 + $3; }
+  | expression MINUS expression { $$ = $1 - $3; }
+  | expression TIMES expression { $$ = $1 * $3; }
+  | expression DIVIDEDBY expression { $$ = $1 / $3; }
+  | NUMBER { $$ = $1; }
+  | IDENTIFIER { $$ = symbols[*$1]; delete $1; }
   ;
 
 %%
