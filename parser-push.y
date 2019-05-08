@@ -9,6 +9,9 @@ void yyerror(const char* err) {
 }
 %}
 
+%define api.pure full
+%define api.push-pull push
+
 /* %define api.value.type { std::string* } */
 %union {
   std::string* str;
