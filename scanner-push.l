@@ -4,27 +4,22 @@
 #include <set>
 #include <cstdlib>
 
-#include "parser.hpp"
-
-struct _word {
-  std::string lexeme;
-  std::string category;
-};
-
-std::vector<struct _word> _words;
-std::set<std::string> _ids;
-bool _error = false;
-
-void _save_word(const std::string& lexeme, const std::string& category) {
-  struct _word _word = {
-    .lexeme = lexeme,
-    .category = category
-  };
-  _words.push_back(_word);
-}
+#include "parser-push.hpp"
 
 YYSTYPE yylval;
+YYLTYPE yylloc;
 yypstate* pstate = yypstate_new();
+
+#define PUSH_TOKEN(category) do {                      \
+    int s = yypush_parse(pstate, category, &yylval, &yylloc);   \
+    if (s != YYPUSH_MORE) {                         \
+      yypstate_delete(pstate);                      \
+      return s;                                     \
+    }                                               \
+  } while(0)
+
+#define YY_USER_ACTION \
+  yylloc.first_line = yylloc.last_line = yylineno;
 
 %}
 
@@ -42,52 +37,37 @@ yypstate* pstate = yypstate_new();
 [a-z][0-9]?   {
                 /* _save_word(yytext, "IDENTIFIER");
                 _ids.insert(yytext); */
+
                 yylval.str = new std::string(yytext, yyleng);
-                return IDENTIFIER;
+                PUSH_TOKEN(IDENTIFIER);
               }
 
 [0-9]+("."[0-9]+)? {
                       yylval.val = atof(yytext);
-                      return NUMBER;
+                      PUSH_TOKEN(NUMBER);
                    }
 
-"="           { yylval.category = EQUALS; return yylval.category; }
-"+"           { yylval.category = PLUS; return yylval.category; }
-"-"           { yylval.category = MINUS; return yylval.category; }
-"*"           { yylval.category = TIMES; return yylval.category; }
-"/"           { yylval.category = DIVIDEDBY; return yylval.category; }
+"="           { yylval.category = EQUALS; PUSH_TOKEN(yylval.category); }
+"+"           { yylval.category = PLUS; PUSH_TOKEN(yylval.category); }
+"-"           { yylval.category = MINUS; PUSH_TOKEN(yylval.category); }
+"*"           { yylval.category = TIMES; PUSH_TOKEN(yylval.category); }
+"/"           { yylval.category = DIVIDEDBY; PUSH_TOKEN(yylval.category); }
 
-";"           { yylval.category = SEMICOLON; return yylval.category; }
-"("           { yylval.category = LPAREN; return yylval.category; }
-")"           { yylval.category = RPAREN; return yylval.category; }
+";"           { yylval.category = SEMICOLON; PUSH_TOKEN(yylval.category); }
+"("           { yylval.category = LPAREN; PUSH_TOKEN(yylval.category); }
+")"           { yylval.category = RPAREN; PUSH_TOKEN(yylval.category); }
 
 .             {
                 std::cerr << "Invalid symbol on line " << yylineno
                   << ": " << yytext << std::endl;
-                yylval.category = yytext[0]; return yylval.category;
+                yylval.category = yytext[0]; PUSH_TOKEN(yylval.category);
               }
 
 <<EOF>>       {
-                if (_error) {
-                  return 1;
-                }
-                return 0;
+                int s = yypush_parse(pstate, 0, NULL, NULL);
+                yypstate_delete(pstate);
+                return s;
               }
 
 
 %%
-
-/* int main() {
-  if (!yylex()) {
-    std::vector<struct _word>::iterator wit;
-    for (wit = _words.begin(); wit != _words.end(); ++wit) {
-      std::cout << wit->lexeme << "\t" << wit->category << std::endl;
-    }
-
-    std::cout << std::endl << "Identifiers:" << std::endl;
-    std::set<std::string>::iterator iit;
-    for (iit = _ids.begin(); iit != _ids.end(); ++iit) {
-      std::cout << *iit << std::endl;
-    }
-  }
-} */
